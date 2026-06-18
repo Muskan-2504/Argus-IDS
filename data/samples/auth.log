@@ -1,0 +1,9 @@
+Oct 10 13:55:30 web01 sshd[2001]: Failed password for invalid user admin from 203.0.113.5 port 54321 ssh2
+Oct 10 13:55:31 web01 sshd[2002]: Failed password for invalid user root from 203.0.113.5 port 54322 ssh2
+Oct 10 13:55:32 web01 sshd[2003]: Failed password for invalid user test from 203.0.113.5 port 54323 ssh2
+Oct 10 13:55:33 web01 sshd[2004]: Failed password for root from 203.0.113.5 port 54324 ssh2
+Oct 10 13:55:34 web01 sshd[2005]: Failed password for root from 203.0.113.5 port 54325 ssh2
+Oct 10 13:55:35 web01 sshd[2006]: Failed password for root from 203.0.113.5 port 54326 ssh2
+Oct 10 13:55:40 web01 sshd[2010]: Accepted password for alice from 10.0.0.5 port 53210 ssh2
+Oct 10 13:56:00 web01 sshd[2020]: Invalid user oracle from 198.51.100.7
+Oct 10 13:56:05 web01 sudo: pam_unix(sudo:session): session opened for user root by alice(uid=0)
