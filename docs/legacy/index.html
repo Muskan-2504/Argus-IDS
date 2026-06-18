@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Intrusion Detection System</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(to bottom, #141e30, #243b55);
+            color: #ffffff;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+        }
+        h1 {
+            font-size: 42px;
+            margin-top: 30px;
+            color: #00d2ff;
+        }
+        .main-container, .container {
+            width: 100%;
+            max-width: 1200px;
+            padding: 20px;
+            text-align: center;
+        }
+        input, textarea {
+            width: 90%;
+            max-width: 400px;
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 8px;
+            border: 2px solid #00d2ff;
+            background-color: rgba(255, 255, 255, 0.1);
+            color: #ffffff;
+            font-size: 16px;
+        }
+        button {
+            padding: 14px 28px;
+            background-color: #00d2ff;
+            color: white;
+            border: none;
+            border-radius: 50px;
+            cursor: pointer;
+            font-size: 18px;
+            transition: background-color 0.4s ease, transform 0.4s ease;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+        }
+        button:hover {
+            background-color: #00a1cc;
+            transform: translateY(-2px);
+        }
+        .option-box {
+            background: linear-gradient(to right, #00d2ff, #3a7bd5);
+            padding: 30px;
+            margin: 20px;
+            border-radius: 20px;
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.3);
+            cursor: pointer;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            color: #ffffff;
+            font-weight: bold;
+            width: 300px;
+            text-align: center;
+        }
+        .option-box:hover {
+            transform: scale(1.1);
+            box-shadow: 0 15px 30px rgba(0, 0, 0, 0.5);
+        }
+        .visualization-container {
+            width: 90%;
+            max-width: 900px;
+            margin: 0 auto;
+            background-color: rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.4);
+        }
+        canvas {
+            margin-top: 30px;
+        }
+        p.analysis-text {
+            font-size: 20px;
+            margin-top: 20px;
+            color: #f5f5f5;
+        }
+        .btn-group {
+            margin-top: 30px;
+            display: flex;
+            justify-content: center;
+        }
+        .btn-group button {
+            margin: 0 15px;
+        }
+    </style>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+
+<h1>Intrusion Detection System</h1>
+
+<!-- User Login Page -->
+<div id="loginPage" class="main-container">
+    <h2>User Login</h2>
+    <input type="text" id="name" placeholder="Name" required><br>
+    <input type="email" id="email" placeholder="Email" required><br>
+    <button onclick="login()">Login</button>
+</div>
+
+<!-- Home Page -->
+<div id="homePage" class="main-container" style="display: none;">
+    <h2>Welcome to the Intrusion Detection System</h2>
+    <div class="option-box" onclick="showSection('detectIntrusionPage')">
+        <h3>Detect Intrusion</h3>
+    </div>
+    <div class="option-box" onclick="showSection('visualizationPage')">
+        <h3>Visualization Dashboard</h3>
+    </div>
+    <div class="option-box" onclick="alert('History feature coming soon!')">
+        <h3>History</h3>
+    </div>
+</div>
+
+<!-- Detect Intrusion Page -->
+<div id="detectIntrusionPage" class="main-container" style="display: none;">
+    <h2>Detect Intrusion</h2>
+    <input type="text" id="ip" placeholder="IP Address" required><br>
+    <textarea id="log" rows="6" placeholder="Enter source logs..."></textarea><br>
+    <button onclick="submitDetails()">Submit and Detect</button>
+    <button onclick="showSection('homePage')">Back to Home</button>
+</div>
+
+<!-- Attack Details Page -->
+<div id="attackDetailsPage" class="main-container" style="display: none;">
+    <h2>Attack Detected</h2>
+    <div id="attack-results"></div><br>
+    <button onclick="showAttackDetails()">Read More</button>
+    <button onclick="showSection('detectIntrusionPage')">Back</button>
+</div>
+
+<!-- More Attack Details Page -->
+<div id="attackMoreDetailsPage" class="main-container" style="display: none;">
+    <h2>Attack Details</h2>
+    <div id="more-attack-details"></div><br>
+    <div class="btn-group">
+        <button onclick="showSection('attackDetailsPage')">Back</button>
+        <button onclick="resetForm()">Reset</button>
+        <button onclick="showSection('homePage')">Back to Menu</button>
+    </div>
+</div>
+
+<!-- Visualization Page -->
+<div id="visualizationPage" class="main-container" style="display: none;">
+    <h2>Visualization Dashboard</h2>
+    <div class="visualization-container">
+        <canvas id="attackChart"></canvas>
+    </div>
+    <p class="analysis-text">The chart shows the frequency of different attack types detected over time. This helps to understand the patterns of intrusion attempts.</p>
+    <button onclick="showSection('homePage')">Back to Home</button>
+</div>
+
+<script>
+    let detectedAttackTypes = [];
+    let attackFrequency = {};
+
+    function login() {
+        document.getElementById('loginPage').style.display = 'none';
+        document.getElementById('homePage').style.display = 'block';
+    }
+
+    function showSection(sectionId) {
+        document.querySelectorAll('.main-container').forEach(el => el.style.display = 'none');
+        document.getElementById(sectionId).style.display = 'block';
+        if (sectionId === 'visualizationPage') {
+            fetchVisualizationData();
+        }
+    }
+
+    function analyzeLogs(logs) {
+        const timestamps = logs.split('\n').map(item => item.trim()).filter(Boolean);
+        let attackTypes = [];
+
+        // Detecting Denial of Service (DoS) attack
+        if (timestamps.length > 5) attackTypes.push('Denial of Service (DoS) Attack');
+        // Detecting Brute Force attack
+        if (new Set(timestamps).size < timestamps.length) attackTypes.push('Brute Force Attack');
+        // Detecting Port Scanning
+        if (timestamps.length > 3 && timestamps.some((time, index, array) => array.indexOf(time) !== index)) attackTypes.push('Port Scanning');
+        // If no attack detected
+        if (attackTypes.length === 0) attackTypes.push('No significant threat detected');
+
+        attackTypes.forEach(attack => attackFrequency[attack] = (attackFrequency[attack] || 0) + 1);
+
+        return { attackTypes };
+    }
+
+    function submitDetails() {
+        const ip = document.getElementById('ip').value;
+        const logs = document.getElementById('log').value;
+        if (!ip || !logs) {
+            alert('Please enter both IP and logs.');
+            return;
+        }
+
+        document.getElementById('detectIntrusionPage').style.display = 'none';
+        document.getElementById('attackDetailsPage').style.display = 'block';
+
+        const analysisResult = analyzeLogs(logs);
+        detectedAttackTypes = analysisResult.attackTypes;
+
+        const resultSection = document.getElementById('attack-results');
+        resultSection.innerHTML = `<p><strong>IP:</strong> ${ip}</p><p><strong>Detected Attacks:</strong><br>${detectedAttackTypes.join('<br>')}</p>`;
+    }
+
+    function showAttackDetails() {
+        document.getElementById('attackDetailsPage').style.display = 'none';
+        document.getElementById('attackMoreDetailsPage').style.display = 'block';
+
+        let detailsHtml = '';
+        detectedAttackTypes.forEach(attackType => {
+            if (attackType === 'Denial of Service (DoS) Attack') {
+                detailsHtml += `<h3>Denial of Service (DoS) Attack</h3><p><strong>Description:</strong> A DoS attack aims to overwhelm a service, causing it to become unavailable.</p><p><strong>Mitigation:</strong> Use firewalls, rate limiting, and anti-DDoS solutions.</p>`;
+            } else if (attackType === 'Brute Force Attack') {
+                detailsHtml += `<h3>Brute Force Attack</h3><p><strong>Description:</strong> Repeated login attempts trying different password combinations.</p><p><strong>Mitigation:</strong> Implement account lockout, CAPTCHAs, and use strong passwords.</p>`;
+            } else if (attackType === 'Port Scanning') {
+                detailsHtml += `<h3>Port Scanning</h3><p><strong>Description:</strong> Scanning the network for open ports to find vulnerabilities.</p><p><strong>Mitigation:</strong> Use a firewall to block unused ports and detect scanning activities.</p>`;
+            } else {
+                detailsHtml += `<h3>No significant threat detected</h3><p>Your system is secure!</p>`;
+            }
+        });
+        document.getElementById('more-attack-details').innerHTML = detailsHtml;
+    }
+
+    function fetchVisualizationData() {
+        const ctx = document.getElementById('attackChart').getContext('2d');
+        const attackLabels = Object.keys(attackFrequency);
+        const attackCounts = Object.values(attackFrequency);
+
+        new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: attackLabels,
+                datasets: [{
+                    label: 'Frequency of Detected Attacks',
+                    data: attackCounts,
+                    backgroundColor: [
+                        'rgba(255, 99, 132, 0.2)',
+                        'rgba(54, 162, 235, 0.2)',
+                        'rgba(255, 206, 86, 0.2)',
+                        'rgba(75, 192, 192, 0.2)',
+                        'rgba(153, 102, 255, 0.2)'
+                    ],
+                    borderColor: [
+                        'rgba(255, 99, 132, 1)',
+                        'rgba(54, 162, 235, 1)',
+                        'rgba(255, 206, 86, 1)',
+                        'rgba(75, 192, 192, 1)',
+                        'rgba(153, 102, 255, 1)'
+                    ],
+                    borderWidth: 2
+                }]
+            },
+            options: {
+                scales: {
+                    y: {
+                        beginAtZero: true
+                    }
+                }
+            }
+        });
+    }
+
+    function resetForm() {
+        document.getElementById('ip').value = '';
+        document.getElementById('log').value = '';
+        detectedAttackTypes = [];
+        attackFrequency = {};
+    }
+</script>
+
+</body>
+</html>
