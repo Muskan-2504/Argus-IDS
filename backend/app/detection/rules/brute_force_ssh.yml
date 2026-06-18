@@ -1,0 +1,19 @@
+# Example Sigma-style detection rule (wired up in Milestone M2).
+# Rules are data, not code — new detections are added by dropping a YAML file
+# here, never by editing Python `if` statements.
+key: brute_force_ssh
+name: SSH Brute-Force Attempt
+description: >
+  Many failed SSH authentications from a single source IP within a short
+  window, indicating password guessing.
+severity: high
+mitre_technique: T1110          # Brute Force
+enabled: true
+match:
+  source_type: auth_log
+  field: event.outcome
+  equals: failure
+threshold:
+  group_by: source_ip
+  count: 5
+  window_seconds: 60
