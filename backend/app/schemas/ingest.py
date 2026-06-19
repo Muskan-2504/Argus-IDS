@@ -23,3 +23,4 @@ class IngestResult(BaseModel):
     received: int  # non-blank lines submitted
     parsed: int  # lines successfully turned into events
     skipped: int  # lines the parser did not recognize
+    alerts: int = 0  # alerts raised by detection on this batch

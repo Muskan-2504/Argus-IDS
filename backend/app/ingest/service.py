@@ -9,6 +9,7 @@ from __future__ import annotations
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
+from app.detection.engine import run_detection
 from app.ingest.parsers import get_parser
 from app.models.enums import SourceType
 from app.models.event import Event
@@ -56,10 +57,14 @@ def ingest_lines(
     db.add_all(events)
     db.commit()
 
+    # Run detection synchronously over the new batch (made async in M4).
+    alerts = run_detection(db, events) if events else []
+
     return IngestResult(
         source_type=source_type,
         source_id=source_id,
         received=len(non_blank),
         parsed=len(events),
         skipped=len(non_blank) - len(events),
+        alerts=len(alerts),
     )
