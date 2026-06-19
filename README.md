@@ -77,6 +77,7 @@ python -m venv .venv && .venv\Scripts\activate   # Windows
 pip install -e ".[dev]"
 
 alembic upgrade head                                  # create the schema
+python -m app.cli sync-rules                           # load detection rules
 python -m app.cli create-admin \                      # seed the first admin
     --username admin --email admin@argus.local --password 'change-me-123'
 
@@ -98,11 +99,34 @@ JWT bearer token; access is gated by the role hierarchy **viewer < analyst < adm
 | `PATCH` | `/api/users/{id}/role` | admin | Change another user's role |
 | `POST` | `/api/ingest` | analyst | Ingest a JSON batch of raw log lines |
 | `POST` | `/api/ingest/file` | analyst | Ingest an uploaded log file |
+| `GET`  | `/api/alerts` | any | List alerts (filter by status/severity/source IP) |
+| `GET`  | `/api/alerts/{id}` | any | Inspect a single alert |
+| `PATCH`| `/api/alerts/{id}/status` | analyst | Triage: acknowledge / resolve / false-positive |
 
 Ingestion parses real log formats — Linux `auth.log`, nginx/Apache combined
 access logs, and Suricata EVE JSON — into normalized, indexed events.
 Passwords are Argon2id-hashed and every query is parameterized: the SQL
 injection and fake auth of the [original project](docs/legacy/) are gone.
+
+## Detection (M2)
+
+Detection is **data, not code**: rules live as Sigma-style YAML files in
+[`backend/app/detection/rules/`](backend/app/detection/rules/), not as
+hard-coded `if` statements. Each rule maps to a [MITRE ATT&CK](https://attack.mitre.org/)
+technique and a severity. Two rule shapes cover the original project's three
+attack types plus brute force:
+
+| Rule | Type | MITRE | Fires when |
+|---|---|---|---|
+| SSH brute force | threshold | T1110 | ≥5 failed SSH auths from one IP in 60s |
+| HTTP flood / DoS | threshold | T1498 | ≥100 HTTP requests from one IP in 10s |
+| Port scan | threshold (distinct) | T1046 | one IP hits ≥10 distinct ports in 60s |
+| SQL injection probe | match | T1190 | a request path matches SQLi signatures |
+
+On ingest, the engine evaluates every enabled rule over the new events and
+persists scored alerts (deduplicated so detections don't storm the queue).
+Analysts then move each alert through its lifecycle — *open → acknowledged →
+resolved / false-positive* — via the triage endpoint.
 
 ## Repository layout
 
@@ -116,7 +140,7 @@ argus-ids/
 │   │   ├── db/         SQLAlchemy engine, session, portable types
 │   │   ├── models/     database models
 │   │   ├── schemas/    Pydantic request/response models
-│   │   ├── detection/  rule engine + anomaly + MITRE  (rules/*.yml, M2+)
+│   │   ├── detection/  rule engine (rules/*.yml) + MITRE; anomaly/ML at M5
 │   │   ├── ingest/     parsers (auth.log, nginx, suricata) + service
 │   │   ├── enrich/     GeoIP + threat-intel             (M4)
 │   │   └── cli.py      admin bootstrap (create-admin)
@@ -133,7 +157,7 @@ argus-ids/
 
 - [x] **M0 — Scaffold:** repo, Docker, CI, data model, runnable API
 - [x] **M1 — Secure core:** ingest API + parsers, Argon2 auth + RBAC, parameterized everything, migration
-- [ ] **M2 — Rule engine:** Sigma-style YAML rules (DoS / brute-force / port-scan / SQLi), persisted alerts
+- [x] **M2 — Rule engine:** Sigma-style YAML rules (DoS / brute-force / port-scan / SQLi), MITRE mapping, persisted alerts + triage
 - [ ] **M3 — Dashboard:** React UI, alert list, charts, triage workflow
 - [ ] **M4 — Real-time + enrichment:** WebSocket feed, GeoIP / AbuseIPDB, D3 attack map
 - [ ] **M5 — Intelligence:** statistical + ML anomaly detection, MITRE ATT&CK mapping, severity scoring
