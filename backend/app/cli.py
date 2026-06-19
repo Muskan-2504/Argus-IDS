@@ -16,6 +16,7 @@ from sqlalchemy.orm import Session
 
 from app.crud import user as user_crud
 from app.db.session import SessionLocal
+from app.detection.sync import sync_rules
 from app.models.enums import Role
 from app.models.user import User
 
@@ -44,6 +45,16 @@ def _cmd_create_admin(args: argparse.Namespace) -> int:
     return 0
 
 
+def _cmd_sync_rules(_args: argparse.Namespace) -> int:
+    db = SessionLocal()
+    try:
+        created, updated = sync_rules(db)
+    finally:
+        db.close()
+    print(f"Synced detection rules: {created} created, {updated} updated.")
+    return 0
+
+
 def main(argv: Sequence[str] | None = None) -> int:
     parser = argparse.ArgumentParser(prog="argus", description="Argus admin utilities.")
     sub = parser.add_subparsers(dest="command", required=True)
@@ -53,6 +64,9 @@ def main(argv: Sequence[str] | None = None) -> int:
     create.add_argument("--email", required=True)
     create.add_argument("--password", required=True)
     create.set_defaults(func=_cmd_create_admin)
+
+    sync = sub.add_parser("sync-rules", help="Load YAML detection rules into the database.")
+    sync.set_defaults(func=_cmd_sync_rules)
 
     args = parser.parse_args(argv)
     return int(args.func(args))
