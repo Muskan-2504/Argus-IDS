@@ -1,0 +1,14 @@
+type: threshold
+key: port_scan
+name: Port Scan
+description: >
+  A single source IP probing many distinct destination ports within a short
+  window (10+ ports in 60 seconds), characteristic of port scanning.
+severity: medium
+mitre_technique: T1046          # Network Service Discovery
+enabled: true
+selection: {}
+group_by: source_ip
+distinct_field: raw.dest_port
+window_seconds: 60
+threshold: 10

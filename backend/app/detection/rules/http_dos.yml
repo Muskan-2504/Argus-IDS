@@ -1,0 +1,14 @@
+type: threshold
+key: http_dos
+name: HTTP Flood / Denial of Service
+description: >
+  An abnormally high request rate from a single source IP (100+ HTTP requests
+  within 10 seconds), characteristic of an application-layer DoS flood.
+severity: high
+mitre_technique: T1498          # Network Denial of Service
+enabled: true
+selection:
+  protocol: http
+group_by: source_ip
+window_seconds: 10
+threshold: 100
