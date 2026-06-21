@@ -16,6 +16,7 @@ venv/
 node_modules/
 frontend/dist/
 frontend/.vite/
+*.tsbuildinfo
 
 # Data & models (don't commit large/binary or generated artifacts)
 data/geoip/*.mmdb
