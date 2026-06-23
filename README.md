@@ -85,6 +85,14 @@ uvicorn app.main:app --reload
 pytest -q
 ```
 
+Frontend dashboard (in a second terminal):
+
+```bash
+cd frontend
+npm install
+npm run dev        # http://localhost:5173 — sign in with the admin you created
+```
+
 ## API (M1)
 
 Interactive docs live at `/docs`. Authentication is OAuth2 password flow →
@@ -158,7 +166,7 @@ argus-ids/
 - [x] **M0 — Scaffold:** repo, Docker, CI, data model, runnable API
 - [x] **M1 — Secure core:** ingest API + parsers, Argon2 auth + RBAC, parameterized everything, migration
 - [x] **M2 — Rule engine:** Sigma-style YAML rules (DoS / brute-force / port-scan / SQLi), MITRE mapping, persisted alerts + triage
-- [ ] **M3 — Dashboard:** React UI, alert list, charts, triage workflow
+- [x] **M3 — Dashboard:** React + TS UI — login, stat cards, severity/timeline charts, filterable alert table, inline triage
 - [ ] **M4 — Real-time + enrichment:** WebSocket feed, GeoIP / AbuseIPDB, D3 attack map
 - [ ] **M5 — Intelligence:** statistical + ML anomaly detection, MITRE ATT&CK mapping, severity scoring
 - [ ] **M6 — Demo polish:** attack-replay harness, false-positive tuning loop, demo GIF

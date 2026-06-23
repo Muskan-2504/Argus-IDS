@@ -31,7 +31,7 @@ A ground-up rebuild of a college IDS prototype into a portfolio-grade, real-time
 | **M0** ✅ | Scaffold: repo, Docker, CI, data model, runnable API. |
 | **M1** ✅ | Secure core: ingest API + parsers, Argon2 auth + RBAC, parameterized queries, initial migration. |
 | **M2** ✅ | Rule engine: Sigma-style YAML rules, MITRE mapping, persisted alerts + triage. |
-| **M3** | Dashboard: React UI, alert list, charts, triage workflow. |
+| **M3** ✅ | Dashboard: React UI, alert list, charts, triage workflow. |
 | **M4** | Real-time + enrichment: WebSocket feed, GeoIP/AbuseIPDB, D3 attack map. |
 | **M5** | Intelligence: statistical + ML anomaly detection, MITRE mapping, severity. |
 | **M6** | Demo polish: attack-replay harness, false-positive tuning loop, demo GIF. |
