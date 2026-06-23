@@ -1,9 +1,10 @@
 import { AuthProvider } from './auth/AuthProvider'
 import { useAuth } from './auth/useAuth'
 import { LoginForm } from './components/LoginForm'
+import { Dashboard } from './pages/Dashboard'
 
 function AppShell() {
-  const { user, loading, logout } = useAuth()
+  const { user, loading } = useAuth()
 
   if (loading) {
     return (
@@ -11,19 +12,7 @@ function AppShell() {
     )
   }
 
-  if (!user) return <LoginForm />
-
-  // Replaced by the full dashboard in a later M3 commit.
-  return (
-    <div className="flex min-h-screen flex-col items-center justify-center gap-4">
-      <p className="text-slate-300">
-        Signed in as <span className="font-semibold">{user.username}</span> ({user.role})
-      </p>
-      <button onClick={logout} className="rounded-lg bg-slate-800 px-4 py-2 hover:bg-slate-700">
-        Sign out
-      </button>
-    </div>
-  )
+  return user ? <Dashboard /> : <LoginForm />
 }
 
 export default function App() {
