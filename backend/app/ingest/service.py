@@ -10,6 +10,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.detection.engine import run_detection
+from app.enrich.service import enrich_ips
 from app.ingest.parsers import get_parser
 from app.models.enums import SourceType
 from app.models.event import Event
@@ -57,7 +58,10 @@ def ingest_lines(
     db.add_all(events)
     db.commit()
 
-    # Run detection synchronously over the new batch (made async in M4).
+    # Enrich new source IPs (cached; no-op when no providers are configured).
+    enrich_ips(db, {event.source_ip for event in events})
+
+    # Run detection synchronously over the new batch.
     alerts = run_detection(db, events) if events else []
 
     return IngestResult(
