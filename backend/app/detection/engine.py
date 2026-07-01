@@ -9,7 +9,6 @@ without a database for the match path.
 from __future__ import annotations
 
 from collections.abc import Iterable
-from dataclasses import dataclass
 from datetime import timedelta
 from urllib.parse import unquote
 
@@ -17,27 +16,16 @@ from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from app.crud import alert as alert_crud
+from app.detection.anomaly import detect_anomalies
 from app.detection.definitions import MatchRule, ThresholdRule, get_field, selection_matches
+from app.detection.finding import Finding
 from app.detection.loader import load_enabled_rules
+from app.detection.scoring import score_finding
 from app.models.alert import Alert
-from app.models.enums import AlertStatus, Severity
+from app.models.enums import AlertStatus
 from app.models.event import Event
 from app.models.rule import DetectionRule
 from app.realtime.broadcaster import broadcaster
-
-
-@dataclass
-class Finding:
-    """A single detection result, not yet persisted."""
-
-    rule_key: str
-    title: str
-    description: str
-    severity: Severity
-    mitre_technique: str | None
-    score: float
-    source_ip: str | None = None
-    event_id: int | None = None
 
 
 def evaluate_match_rule(rule: MatchRule, events: Iterable[Event]) -> list[Finding]:
@@ -141,37 +129,32 @@ def _is_duplicate(db: Session, finding: Finding, rule_id: int | None) -> bool:
     return existing is not None
 
 
-def run_detection(db: Session, events: list[Event]) -> list[Alert]:
-    """Evaluate all enabled rules against a freshly-ingested batch of events
-    and persist any new alerts they raise.
-    """
-    rules = load_enabled_rules()
+def _persist_findings(db: Session, findings: list[Finding]) -> list[Alert]:
+    """Score, deduplicate, persist, and broadcast a batch of findings."""
+    if not findings:
+        return []
+
     rule_ids: dict[str, int] = {
         row.key: row.id for row in db.execute(select(DetectionRule.key, DetectionRule.id)).all()
     }
-
-    findings: list[Finding] = []
-    for rule in rules:
-        if isinstance(rule, MatchRule):
-            findings.extend(evaluate_match_rule(rule, events))
-        else:
-            group_values = {getattr(e, rule.group_by, None) for e in events}
-            findings.extend(evaluate_threshold_rule(rule, db, group_values))
+    enrichment = alert_crud.enrichment_map(db, [f.source_ip for f in findings])
 
     alerts: list[Alert] = []
     for finding in findings:
         rule_id = rule_ids.get(finding.rule_key)
         if _is_duplicate(db, finding, rule_id):
             continue
+        enr = enrichment.get(finding.source_ip) if finding.source_ip else None
+        severity, score = score_finding(finding, enr.abuse_score if enr else None)
         alert = Alert(
             event_id=finding.event_id,
             rule_id=rule_id,
             source_ip=finding.source_ip,
             title=finding.title,
             description=finding.description,
-            severity=finding.severity,
+            severity=severity,
             mitre_technique=finding.mitre_technique,
-            score=finding.score,
+            score=score,
             status=AlertStatus.open,
         )
         db.add(alert)
@@ -182,10 +165,38 @@ def run_detection(db: Session, events: list[Event]) -> list[Alert]:
         db.refresh(alert)
 
     # Push new alerts to any connected dashboards (real-time feed).
-    if alerts:
-        enrichment = alert_crud.enrichment_map(db, [a.source_ip for a in alerts])
-        for alert in alerts:
-            payload = alert_crud.to_read(alert, enrichment).model_dump(mode="json")
-            broadcaster.publish({"type": "alert", "data": payload})
+    for alert in alerts:
+        payload = alert_crud.to_read(alert, enrichment).model_dump(mode="json")
+        broadcaster.publish({"type": "alert", "data": payload})
 
     return alerts
+
+
+def run_detection(db: Session, events: list[Event]) -> list[Alert]:
+    """Evaluate all enabled rules against a freshly-ingested batch of events
+    and persist any new alerts they raise.
+    """
+    findings: list[Finding] = []
+    for rule in load_enabled_rules():
+        if isinstance(rule, MatchRule):
+            findings.extend(evaluate_match_rule(rule, events))
+        else:
+            group_values = {getattr(e, rule.group_by, None) for e in events}
+            findings.extend(evaluate_threshold_rule(rule, db, group_values))
+    return _persist_findings(db, findings)
+
+
+def run_anomaly_scan(db: Session, *, window_seconds: int = 300) -> list[Alert]:
+    """Run the statistical + ML anomaly detectors over the most recent window
+    of events and persist any new alerts.
+    """
+    window_end = db.scalar(select(func.max(Event.timestamp)))
+    if window_end is None:
+        return []
+    window_start = window_end - timedelta(seconds=window_seconds)
+    events = list(
+        db.scalars(
+            select(Event).where(Event.timestamp >= window_start, Event.timestamp <= window_end)
+        )
+    )
+    return _persist_findings(db, detect_anomalies(events))
