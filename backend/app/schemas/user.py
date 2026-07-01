@@ -40,7 +40,10 @@ class UserRead(BaseModel):
 
     id: int
     username: str
-    email: EmailStr
+    # Plain str on purpose: this is an *output* schema over data already
+    # validated on input. Re-validating with EmailStr would 500 on reading
+    # back perfectly legitimate reserved-domain addresses (e.g. *.local).
+    email: str
     role: Role
     is_active: bool
     created_at: datetime
