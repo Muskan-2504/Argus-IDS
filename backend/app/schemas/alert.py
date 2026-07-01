@@ -7,6 +7,16 @@ from pydantic import BaseModel, ConfigDict
 from app.models.enums import AlertStatus, Severity
 
 
+class EnrichmentRead(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    country: str | None = None
+    city: str | None = None
+    latitude: float | None = None
+    longitude: float | None = None
+    abuse_score: int | None = None
+
+
 class AlertRead(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
@@ -22,6 +32,7 @@ class AlertRead(BaseModel):
     status: AlertStatus
     created_at: datetime
     updated_at: datetime
+    enrichment: EnrichmentRead | None = None
 
 
 class AlertStatusUpdate(BaseModel):

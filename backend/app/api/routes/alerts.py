@@ -30,7 +30,8 @@ def list_alerts(
     alerts = alert_crud.list_alerts(
         db, status=status, severity=severity, source_ip=source_ip, limit=limit, offset=offset
     )
-    return [AlertRead.model_validate(a) for a in alerts]
+    enrichment = alert_crud.enrichment_map(db, (a.source_ip for a in alerts))
+    return [alert_crud.to_read(a, enrichment) for a in alerts]
 
 
 @router.get("/{alert_id}", response_model=AlertRead)
@@ -38,7 +39,7 @@ def get_alert(alert_id: int, db: DbSession, _user: CurrentUser) -> AlertRead:
     alert = alert_crud.get_alert(db, alert_id)
     if alert is None:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Alert not found.")
-    return AlertRead.model_validate(alert)
+    return alert_crud.to_read(alert, alert_crud.enrichment_map(db, [alert.source_ip]))
 
 
 @router.patch("/{alert_id}/status", response_model=AlertRead)
