@@ -1,7 +1,17 @@
 // Thin typed wrapper over fetch. The bearer token is persisted in
 // localStorage and attached automatically to every request.
 
-import type { Alert, AlertFilters, AlertStatus, Token, User } from './types'
+import type {
+  Alert,
+  AlertFilters,
+  AlertStatus,
+  AnalyzeRequest,
+  AnalyzeResult,
+  ClearResult,
+  MitreCoverage,
+  Token,
+  User,
+} from './types'
 
 const BASE = import.meta.env.VITE_API_URL ?? ''
 const TOKEN_KEY = 'argus_token'
@@ -79,4 +89,16 @@ export const api = {
       method: 'PATCH',
       body: JSON.stringify({ status }),
     }),
+
+  analyzeLogs: (payload: AnalyzeRequest): Promise<AnalyzeResult> =>
+    request<AnalyzeResult>('/api/ingest/analyze', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    }),
+
+  clearData: (): Promise<ClearResult> =>
+    request<ClearResult>('/api/maintenance/clear', { method: 'POST' }),
+
+  mitreCoverage: (): Promise<MitreCoverage[]> =>
+    request<MitreCoverage[]>('/api/detection/mitre-coverage'),
 }

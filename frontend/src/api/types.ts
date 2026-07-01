@@ -3,6 +3,7 @@
 export type Role = 'admin' | 'analyst' | 'viewer'
 export type Severity = 'info' | 'low' | 'medium' | 'high' | 'critical'
 export type AlertStatus = 'open' | 'acknowledged' | 'resolved' | 'false_positive'
+export type SourceType = 'auth_log' | 'nginx' | 'apache' | 'suricata' | 'custom'
 
 export const SEVERITY_ORDER: Severity[] = ['critical', 'high', 'medium', 'low', 'info']
 export const ALERT_STATUSES: AlertStatus[] = ['open', 'acknowledged', 'resolved', 'false_positive']
@@ -40,11 +41,21 @@ export interface Alert {
   description: string | null
   severity: Severity
   mitre_technique: string | null
+  technique_name?: string | null
+  tactic?: string | null
   score: number
   status: AlertStatus
   created_at: string
   updated_at: string
   enrichment?: Enrichment | null
+}
+
+export interface MitreCoverage {
+  technique: string
+  name: string | null
+  tactic: string | null
+  rule_count: number
+  alert_count: number
 }
 
 export interface AlertFilters {
@@ -53,4 +64,24 @@ export interface AlertFilters {
   source_ip?: string
   limit?: number
   offset?: number
+}
+
+export interface AnalyzeRequest {
+  text: string
+  // Omit / null to let the backend auto-detect the format.
+  source_type?: SourceType | null
+  source_name?: string
+}
+
+export interface AnalyzeResult {
+  detected_source_type: SourceType
+  auto_detected: boolean
+  received: number
+  parsed: number
+  skipped: number
+  alerts: Alert[]
+}
+
+export interface ClearResult {
+  deleted: Record<string, number>
 }
