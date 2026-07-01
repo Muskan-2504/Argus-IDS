@@ -60,6 +60,17 @@ def test_me_requires_authentication(client: TestClient) -> None:
     assert client.get("/api/auth/me").status_code == 401
 
 
+def test_me_reads_back_reserved_domain_email(
+    client: TestClient, make_user: Callable[..., User], auth_headers: Callable[..., dict[str, str]]
+) -> None:
+    # Regression: reserved-domain emails (.local/.test/etc.) must read back
+    # without the output schema re-validating and 500-ing.
+    make_user("svc", email="svc@argus.local", role=Role.viewer)
+    resp = client.get("/api/auth/me", headers=auth_headers("svc"))
+    assert resp.status_code == 200
+    assert resp.json()["email"] == "svc@argus.local"
+
+
 def test_viewer_cannot_list_users(
     client: TestClient, make_user: Callable[..., User], auth_headers: Callable[..., dict[str, str]]
 ) -> None:
