@@ -1,12 +1,18 @@
 """Application configuration, loaded from environment / `.env`."""
 
 from functools import lru_cache
+from pathlib import Path
 
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
+# Resolve .env by absolute path (backend/.env) so it is found no matter which
+# directory the process is launched from — otherwise a stray CWD silently falls
+# back to the production Postgres default below. Missing file is fine; ignored.
+_ENV_FILE = Path(__file__).resolve().parents[2] / ".env"
+
 
 class Settings(BaseSettings):
-    model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8", extra="ignore")
+    model_config = SettingsConfigDict(env_file=_ENV_FILE, env_file_encoding="utf-8", extra="ignore")
 
     app_name: str = "Argus IDS"
     environment: str = "development"
