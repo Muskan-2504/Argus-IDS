@@ -24,9 +24,10 @@ class Settings(BaseSettings):
     # CORS
     cors_origins: list[str] = ["http://localhost:5173"]
 
-    # Optional enrichment integrations
+    # Optional enrichment integrations (all graceful — null when unconfigured)
     abuseipdb_api_key: str | None = None
-    geoip_db_path: str | None = None
+    geoip_db_path: str | None = None  # path to a MaxMind GeoLite2-City .mmdb
+    geoip_use_ipapi: bool = False  # opt-in free, key-less geo via ip-api.com
 
 
 @lru_cache
