@@ -55,6 +55,21 @@ def _cmd_sync_rules(_args: argparse.Namespace) -> int:
     return 0
 
 
+def _cmd_init_db(_args: argparse.Namespace) -> int:
+    """Create all tables directly (for SQLite / zero-setup local dev).
+
+    Production uses ``alembic upgrade head`` instead — that path also creates
+    the native PostgreSQL enum types this shortcut skips.
+    """
+    import app.models  # noqa: F401  -- register every table on the metadata
+    from app.db.base import Base
+    from app.db.session import engine
+
+    Base.metadata.create_all(engine)
+    print("Initialized database schema.")
+    return 0
+
+
 def main(argv: Sequence[str] | None = None) -> int:
     parser = argparse.ArgumentParser(prog="argus", description="Argus admin utilities.")
     sub = parser.add_subparsers(dest="command", required=True)
@@ -67,6 +82,9 @@ def main(argv: Sequence[str] | None = None) -> int:
 
     sync = sub.add_parser("sync-rules", help="Load YAML detection rules into the database.")
     sync.set_defaults(func=_cmd_sync_rules)
+
+    init = sub.add_parser("init-db", help="Create tables directly (SQLite/dev; prod uses alembic).")
+    init.set_defaults(func=_cmd_init_db)
 
     args = parser.parse_args(argv)
     return int(args.func(args))
