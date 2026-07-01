@@ -3,6 +3,7 @@
 from app.ingest.parsers.access_log import AccessLogParser
 from app.ingest.parsers.auth_log import AuthLogParser
 from app.ingest.parsers.base import LogParser, ParsedEvent
+from app.ingest.parsers.generic import GenericParser
 from app.ingest.parsers.suricata import SuricataParser
 from app.models.enums import SourceType
 
@@ -11,6 +12,7 @@ _REGISTRY: dict[SourceType, type[LogParser]] = {
     SourceType.nginx: AccessLogParser,
     SourceType.apache: AccessLogParser,  # shares the NCSA combined format
     SourceType.suricata: SuricataParser,
+    SourceType.custom: GenericParser,  # format-agnostic fallback for anything else
 }
 
 SUPPORTED_SOURCE_TYPES = tuple(_REGISTRY)
@@ -36,6 +38,7 @@ def get_parser(source_type: SourceType) -> LogParser:
 __all__ = [
     "AccessLogParser",
     "AuthLogParser",
+    "GenericParser",
     "LogParser",
     "ParsedEvent",
     "SuricataParser",
