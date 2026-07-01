@@ -97,5 +97,6 @@ def test_run_detection_links_rule_and_dedupes(db_session: Session) -> None:
 
 
 def test_sync_rules_is_idempotent(db_session: Session) -> None:
-    assert sync_rules(db_session) == (4, 0)
-    assert sync_rules(db_session) == (0, 4)
+    # 4 YAML rules + 2 built-in anomaly detectors.
+    assert sync_rules(db_session) == (6, 0)
+    assert sync_rules(db_session) == (0, 6)
