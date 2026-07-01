@@ -47,14 +47,20 @@ export function AlertTable({ alerts, canTriage, onTriage }: Props) {
               <td className="px-4 py-3 font-mono text-slate-300">{alert.source_ip ?? '—'}</td>
               <td className="px-4 py-3">
                 {alert.mitre_technique ? (
-                  <a
-                    href={mitreUrl(alert.mitre_technique)}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="text-sky-400 hover:underline"
-                  >
-                    {alert.mitre_technique}
-                  </a>
+                  <div className="leading-tight">
+                    <a
+                      href={mitreUrl(alert.mitre_technique)}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="text-sky-400 hover:underline"
+                    >
+                      {alert.mitre_technique}
+                    </a>
+                    {alert.technique_name && (
+                      <div className="text-xs text-slate-300">{alert.technique_name}</div>
+                    )}
+                    {alert.tactic && <div className="text-[11px] text-slate-500">{alert.tactic}</div>}
+                  </div>
                 ) : (
                   '—'
                 )}

@@ -33,7 +33,7 @@ A ground-up rebuild of a college IDS prototype into a portfolio-grade, real-time
 | **M2** ✅ | Rule engine: Sigma-style YAML rules, MITRE mapping, persisted alerts + triage. |
 | **M3** ✅ | Dashboard: React UI, alert list, charts, triage workflow. |
 | **M4** ✅ | Real-time + enrichment: WebSocket feed, GeoIP/AbuseIPDB, D3 attack map. |
-| **M5** | Intelligence: statistical + ML anomaly detection, MITRE mapping, severity. |
+| **M5** ✅ | Intelligence: statistical + ML anomaly detection, risk scoring, MITRE ATT&CK catalog (technique names/tactics on alerts) + coverage endpoint. |
 | **M6** | Demo polish: attack-replay harness, false-positive tuning loop, demo GIF. |
 
 Each milestone is an independently demoable, committable unit.
