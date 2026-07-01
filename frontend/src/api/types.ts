@@ -23,6 +23,14 @@ export interface Token {
   expires_in: number
 }
 
+export interface Enrichment {
+  country: string | null
+  city: string | null
+  latitude: number | null
+  longitude: number | null
+  abuse_score: number | null
+}
+
 export interface Alert {
   id: number
   event_id: number | null
@@ -36,6 +44,7 @@ export interface Alert {
   status: AlertStatus
   created_at: string
   updated_at: string
+  enrichment?: Enrichment | null
 }
 
 export interface AlertFilters {

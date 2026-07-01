@@ -8,7 +8,8 @@ export default defineConfig({
   plugins: [react()],
   server: {
     proxy: {
-      '/api': 'http://localhost:8000',
+      // ws: true so the /api/ws/alerts WebSocket upgrade is proxied too.
+      '/api': { target: 'http://localhost:8000', ws: true, changeOrigin: true },
     },
   },
 })
