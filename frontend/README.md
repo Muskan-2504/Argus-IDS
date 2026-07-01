@@ -1,7 +1,7 @@
 # Argus Frontend
 
 The analyst dashboard — **React 18 + TypeScript + Vite + Tailwind**, with
-Chart.js for visualization (a D3 attack map arrives in M4).
+Chart.js and a D3 world attack map for visualization.
 
 ## Features
 
@@ -11,7 +11,9 @@ Chart.js for visualization (a D3 attack map arrives in M4).
 - **Alert table** — severity & status badges, clickable MITRE technique links,
   filters (severity / status / source IP), and **inline triage** (acknowledge /
   resolve / false-positive) for analysts and admins.
-- **Live refresh** — polls every 10s today; upgraded to a WebSocket push in M4.
+- **Real-time** — a WebSocket stream pushes new alerts into a live feed, the
+  attack map, and the table; a poll backstops a dropped socket.
+- **Attack map** — a D3 world map plots alert origins from IP enrichment.
 
 ## Develop
 

@@ -110,6 +110,7 @@ JWT bearer token; access is gated by the role hierarchy **viewer < analyst < adm
 | `GET`  | `/api/alerts` | any | List alerts (filter by status/severity/source IP) |
 | `GET`  | `/api/alerts/{id}` | any | Inspect a single alert |
 | `PATCH`| `/api/alerts/{id}/status` | analyst | Triage: acknowledge / resolve / false-positive |
+| `WS`   | `/api/ws/alerts?token=…` | any | Live alert stream (WebSocket) |
 
 Ingestion parses real log formats — Linux `auth.log`, nginx/Apache combined
 access logs, and Suricata EVE JSON — into normalized, indexed events.
@@ -135,6 +136,19 @@ On ingest, the engine evaluates every enabled rule over the new events and
 persists scored alerts (deduplicated so detections don't storm the queue).
 Analysts then move each alert through its lifecycle — *open → acknowledged →
 resolved / false-positive* — via the triage endpoint.
+
+## Real-time & enrichment (M4)
+
+- **Live alerts** — new alerts are pushed to the dashboard over a WebSocket
+  (`/api/ws/alerts`) the instant detection fires, via a thread-safe in-process
+  broadcaster. The dashboard falls back to polling if the socket drops.
+- **IP enrichment** — source IPs are geolocated and reputation-scored, cached
+  in the `ip_enrichment` table. Every provider is **optional and graceful**:
+  set `GEOIP_USE_IPAPI=true` (free, key-less) or point `GEOIP_DB_PATH` at a
+  MaxMind GeoLite2 file for geo, and `ABUSEIPDB_API_KEY` for reputation —
+  fields simply stay null when unconfigured.
+- **Attack map** — a D3 (Natural Earth) world map plots alert origins by their
+  geolocated coordinates, sized by volume and colored by severity.
 
 ## Repository layout
 
@@ -167,7 +181,7 @@ argus-ids/
 - [x] **M1 — Secure core:** ingest API + parsers, Argon2 auth + RBAC, parameterized everything, migration
 - [x] **M2 — Rule engine:** Sigma-style YAML rules (DoS / brute-force / port-scan / SQLi), MITRE mapping, persisted alerts + triage
 - [x] **M3 — Dashboard:** React + TS UI — login, stat cards, severity/timeline charts, filterable alert table, inline triage
-- [ ] **M4 — Real-time + enrichment:** WebSocket feed, GeoIP / AbuseIPDB, D3 attack map
+- [x] **M4 — Real-time + enrichment:** WebSocket live feed, GeoIP / AbuseIPDB enrichment, D3 world attack map
 - [ ] **M5 — Intelligence:** statistical + ML anomaly detection, MITRE ATT&CK mapping, severity scoring
 - [ ] **M6 — Demo polish:** attack-replay harness, false-positive tuning loop, demo GIF
 
