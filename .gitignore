@@ -21,6 +21,7 @@ frontend/.vite/
 # Data & models (don't commit large/binary or generated artifacts)
 data/geoip/*.mmdb
 *.sqlite3
+*.db
 *.log
 
 # OS / editor
