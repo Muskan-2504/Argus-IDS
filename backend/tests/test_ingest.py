@@ -60,17 +60,29 @@ def test_analyst_ingests_auth_log(
     assert _event_count(db_session) == 2
 
 
-def test_ingest_unknown_source_type_returns_422(
+def test_ingest_invalid_source_type_returns_422(
     client: TestClient, make_user: Callable[..., User], auth_headers: Callable[..., dict[str, str]]
 ) -> None:
     make_user("analyst_user", role=Role.analyst)
     resp = client.post(
         "/api/ingest",
         headers=auth_headers("analyst_user"),
-        json={"source_type": "custom", "lines": ["anything"]},
+        json={"source_type": "not-a-real-format", "lines": ["anything"]},
     )
-    assert resp.status_code == 422
-    assert "No parser" in resp.json()["detail"]
+    assert resp.status_code == 422  # rejected by enum validation
+
+
+def test_ingest_custom_source_type_uses_generic_parser(
+    client: TestClient, make_user: Callable[..., User], auth_headers: Callable[..., dict[str, str]]
+) -> None:
+    make_user("analyst_user", role=Role.analyst)
+    resp = client.post(
+        "/api/ingest",
+        headers=auth_headers("analyst_user"),
+        json={"source_type": "custom", "lines": ["request from 203.0.113.40 blocked"]},
+    )
+    assert resp.status_code == 200, resp.text
+    assert resp.json()["parsed"] == 1  # generic parser handles arbitrary text
 
 
 def test_ingest_file_upload(

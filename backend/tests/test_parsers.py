@@ -112,7 +112,18 @@ def test_suricata_skips_non_json() -> None:
 # --- registry -------------------------------------------------------------
 
 
-def test_registry_unknown_source_raises() -> None:
+def test_registry_resolves_every_source_type() -> None:
+    from app.ingest.parsers.base import LogParser
+
+    for source_type in SourceType:
+        assert isinstance(get_parser(source_type), LogParser)
+
+
+def test_registry_unknown_source_raises(monkeypatch: pytest.MonkeyPatch) -> None:
+    # The defensive ValueError still guards a SourceType with no registered parser.
+    from app.ingest import parsers
+
+    monkeypatch.delitem(parsers._REGISTRY, SourceType.custom)
     with pytest.raises(ValueError, match="No parser"):
         get_parser(SourceType.custom)
 
