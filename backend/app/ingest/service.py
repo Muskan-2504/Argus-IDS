@@ -12,6 +12,7 @@ from sqlalchemy.orm import Session
 from app.detection.engine import run_detection
 from app.enrich.service import enrich_ips
 from app.ingest.parsers import get_parser
+from app.models.alert import Alert
 from app.models.enums import SourceType
 from app.models.event import Event
 from app.models.log_source import LogSource
@@ -36,6 +37,25 @@ def ingest_lines(
     source_name: str | None = None,
 ) -> IngestResult:
     """Parse ``lines`` with the parser for ``source_type`` and store the events.
+
+    Raises :class:`ValueError` if no parser exists for ``source_type``.
+    """
+    result, _alerts = analyze_lines(
+        db, source_type=source_type, lines=lines, source_name=source_name
+    )
+    return result
+
+
+def analyze_lines(
+    db: Session,
+    *,
+    source_type: SourceType,
+    lines: list[str],
+    source_name: str | None = None,
+) -> tuple[IngestResult, list[Alert]]:
+    """Like :func:`ingest_lines`, but also return the alert rows this batch
+    raised — so the interactive "analyze" flow can show the user exactly which
+    threats were found in what they pasted, not just a count.
 
     Raises :class:`ValueError` if no parser exists for ``source_type``.
     """
@@ -64,7 +84,7 @@ def ingest_lines(
     # Run detection synchronously over the new batch.
     alerts = run_detection(db, events) if events else []
 
-    return IngestResult(
+    result = IngestResult(
         source_type=source_type,
         source_id=source_id,
         received=len(non_blank),
@@ -72,3 +92,4 @@ def ingest_lines(
         skipped=len(non_blank) - len(events),
         alerts=len(alerts),
     )
+    return result, alerts
