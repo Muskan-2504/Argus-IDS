@@ -1,9 +1,11 @@
 """Schemas for reading and triaging alerts."""
 
 from datetime import datetime
+from typing import Self
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, model_validator
 
+from app.detection.mitre import lookup as lookup_technique
 from app.models.enums import AlertStatus, Severity
 
 
@@ -28,11 +30,21 @@ class AlertRead(BaseModel):
     description: str | None
     severity: Severity
     mitre_technique: str | None
+    technique_name: str | None = None  # resolved from the MITRE catalog
+    tactic: str | None = None
     score: float
     status: AlertStatus
     created_at: datetime
     updated_at: datetime
     enrichment: EnrichmentRead | None = None
+
+    @model_validator(mode="after")
+    def _resolve_mitre(self) -> Self:
+        info = lookup_technique(self.mitre_technique)
+        if info is not None:
+            self.technique_name = info.name
+            self.tactic = info.tactic
+        return self
 
 
 class AlertStatusUpdate(BaseModel):
