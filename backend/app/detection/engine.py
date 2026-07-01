@@ -16,12 +16,14 @@ from urllib.parse import unquote
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
+from app.crud import alert as alert_crud
 from app.detection.definitions import MatchRule, ThresholdRule, get_field, selection_matches
 from app.detection.loader import load_enabled_rules
 from app.models.alert import Alert
 from app.models.enums import AlertStatus, Severity
 from app.models.event import Event
 from app.models.rule import DetectionRule
+from app.realtime.broadcaster import broadcaster
 
 
 @dataclass
@@ -178,4 +180,12 @@ def run_detection(db: Session, events: list[Event]) -> list[Alert]:
     db.commit()
     for alert in alerts:
         db.refresh(alert)
+
+    # Push new alerts to any connected dashboards (real-time feed).
+    if alerts:
+        enrichment = alert_crud.enrichment_map(db, [a.source_ip for a in alerts])
+        for alert in alerts:
+            payload = alert_crud.to_read(alert, enrichment).model_dump(mode="json")
+            broadcaster.publish({"type": "alert", "data": payload})
+
     return alerts
